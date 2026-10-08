@@ -20,24 +20,28 @@ const db = mysql.createPool({
   },
 });
 
-// Create tables automatically on startup
+// Create reviews table
 db.query(
   `
   CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     event VARCHAR(255),
-    stars INT NOT NULL,
+    stars VARCHAR(20) NOT NULL,
     text TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
 `,
   (err) => {
-    if (err) console.error("Error creating reviews table:", err.message);
-    else console.log("Reviews table ready!");
+    if (err) {
+      console.error("ERROR CREATING REVIEWS TABLE:", err);
+    } else {
+      console.log("Reviews table ready!");
+    }
   },
 );
 
+// Create bookings table
 db.query(
   `
   CREATE TABLE IF NOT EXISTS bookings (
@@ -49,15 +53,22 @@ db.query(
   )
 `,
   (err) => {
-    if (err) console.error("Error creating bookings table:", err.message);
-    else console.log("Bookings table ready!");
+    if (err) {
+      console.error("ERROR CREATING BOOKINGS TABLE:", err);
+    } else {
+      console.log("Bookings table ready!");
+    }
   },
 );
 
 // GET REVIEWS
 app.get("/api/reviews", (req, res) => {
   db.query("SELECT * FROM reviews ORDER BY id DESC", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("GET REVIEWS ERROR:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
     res.json(results);
   });
 });
@@ -66,11 +77,23 @@ app.get("/api/reviews", (req, res) => {
 app.post("/api/reviews", (req, res) => {
   const { name, event, stars, text } = req.body;
 
+  console.log("Received review:", {
+    name,
+    event,
+    stars,
+    text,
+  });
+
   const sql =
     "INSERT INTO reviews (name, event, stars, text) VALUES (?, ?, ?, ?)";
 
   db.query(sql, [name, event, stars, text], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("REVIEW ERROR:", err);
+      return res.status(500).json({
+        error: err.message,
+      });
+    }
 
     res.status(201).json({
       message: "OK",
@@ -86,7 +109,12 @@ app.post("/api/bookings", (req, res) => {
   const sql = "INSERT INTO bookings (name, email, date) VALUES (?, ?, ?)";
 
   db.query(sql, [name, email, date], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error("BOOKING ERROR:", err);
+      return res.status(500).json({
+        error: err.message,
+      });
+    }
 
     res.status(201).json({
       message: "OK",
