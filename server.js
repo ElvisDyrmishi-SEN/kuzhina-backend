@@ -20,7 +20,7 @@ const db = mysql.createPool({
   },
 });
 
-// Create reviews table
+// Create Reviews Table
 db.query(
   `
   CREATE TABLE IF NOT EXISTS reviews (
@@ -37,11 +37,23 @@ db.query(
       console.error("ERROR CREATING REVIEWS TABLE:", err);
     } else {
       console.log("Reviews table ready!");
+
+      // Fix existing database column
+      db.query(
+        `ALTER TABLE reviews MODIFY COLUMN stars VARCHAR(20) NOT NULL`,
+        (err) => {
+          if (err) {
+            console.error("ERROR UPDATING STARS COLUMN:", err);
+          } else {
+            console.log("Stars column updated!");
+          }
+        },
+      );
     }
   },
 );
 
-// Create bookings table
+// Create Bookings Table
 db.query(
   `
   CREATE TABLE IF NOT EXISTS bookings (
@@ -66,7 +78,9 @@ app.get("/api/reviews", (req, res) => {
   db.query("SELECT * FROM reviews ORDER BY id DESC", (err, results) => {
     if (err) {
       console.error("GET REVIEWS ERROR:", err);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({
+        error: err.message,
+      });
     }
 
     res.json(results);
@@ -90,6 +104,7 @@ app.post("/api/reviews", (req, res) => {
   db.query(sql, [name, event, stars, text], (err, result) => {
     if (err) {
       console.error("REVIEW ERROR:", err);
+
       return res.status(500).json({
         error: err.message,
       });
@@ -106,11 +121,18 @@ app.post("/api/reviews", (req, res) => {
 app.post("/api/bookings", (req, res) => {
   const { name, email, date } = req.body;
 
+  console.log("Received booking:", {
+    name,
+    email,
+    date,
+  });
+
   const sql = "INSERT INTO bookings (name, email, date) VALUES (?, ?, ?)";
 
   db.query(sql, [name, email, date], (err, result) => {
     if (err) {
       console.error("BOOKING ERROR:", err);
+
       return res.status(500).json({
         error: err.message,
       });
@@ -123,6 +145,7 @@ app.post("/api/bookings", (req, res) => {
   });
 });
 
+// START SERVER
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
