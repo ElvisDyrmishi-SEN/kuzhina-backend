@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="sq">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kuzhina e Shefit | Private Chef</title>
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <header class="main-header" id="header">
+      <div class="container header-container">
+        <!-- Në të majtë: Fotoja e Shefit -->
+        <div class="chef-profile">
+          <img src="ikon.jpg" alt="Foto e Shefit" class="chef-img" />
+        </div>
+
+        <!-- Në mes / djathtas: Navigimi me 4 sektorët -->
+        <nav class="main-nav">
+          <ul>
+            <li><a href="#historia">Historia & Eksperienca</a></li>
+            <li><a href="#receta">Receta</a></li>
+            <li><a href="#reviews">Reviews</a></li>
+            <li><a href="#social-media">Social Media Reach</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <!-- SEKSIONI HERO -->
+    <section class="hero-section" id="home">
+      <div class="hero-overlay"></div>
+
+      <div class="hero-content">
+        <h1 class="welcome-title">Mirësevini në Kuzhinën Time</h1>
+        <p class="welcome-subtitle">
+          Eksperiencë kulinarike private dhe gatime me porosi për ngjarjet tuaja
+          speciale.
+        </p>
+
+        <div class="booking-wrapper">
+          <h2>Book a Private Chef</h2>
+          <p>Rezervoni një natë të paharrueshme shije në shtëpinë tuaj.</p>
+          <button class="btn btn-book btn-open-modal">Rezervo Tani</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKSIONI 1: HISTORIA & EKSPERIENCA (TABBED COMPONENT) -->
+    <section class="section-history" id="historia">
+      <div class="container">
+        <div class="section-title">
+          <h2>Rrugëtimi Im Kulinar</h2>
+          <p>
+            Zbuloni si lindi pasioni për kuzhinën dhe hapat e karrierës sime.
+          </p>
+        </div>
+
+        <!-- TABBED COMPONENT -->
+        <div class="tabs-wrapper">
+          <!-- Butonat e Tab-eve -->
+          <div class="tab-buttons">
+            <button class="tab-btn tab-btn--active" data-tab="1">
+              <span>01</span> Nisja & Fillimet
+            </button>
+            <button class="tab-btn" data-tab="2">
+              <span>02</span> Përvoja në Restorante
+            </button>
+            <button class="tab-btn" data-tab="3">
+              <span>03</span> Private Chef & Sot
+            </button>
+          </div>
+
+          <!-- TAB 1: CONTENT -->
+          <div class="tab-content tab-content--1 tab-content--active">
+            <div class="tab-text">
+              <h3>Pasioni i parë në shtëpi (2015)</h3>
+              <p>
+                Gjithçka nisi në kuzhinën e vogël familjare, ku eksperimentoja
+                me përbërësit lokalë dhe recetat tradicionale. Pasioni për
+                shijen mua më shtyu të ndiqja arsimimin profesional kulinar.
+              </p>
+            </div>
+            <div class="tab-gallery">
+              <img src="pjataPar.jpg" alt="Fillimet e shefit" />
+              <img src="pjataPar.jpg" alt="Pjata e parë" />
+            </div>
+          </div>
+
+          <!-- TAB 2: CONTENT -->
+          <div class="tab-content tab-content--2">
+            <div class="tab-text">
+              <h3>Eksperienca në restorante elite (2018 - 2022)</h3>
+              <p>
+                Pasi përfundova studimet, punova si Sous Chef dhe më vonë Head
+                Chef në restorante të njohura. Aty mësova disiplinën, teknikën e
+                lartë të prezantimit (plating) dhe menaxhimin e shijeve
+                komplekse.
+              </p>
+            </div>
+            <div class="tab-gallery">
+              <img src="kuzhin.jpg" alt="Puna në restorant" />
+              <img src="ekip.jpg" alt="Gatimi me ekipin" />
+            </div>
+          </div>
+
+          <!-- TAB 3: CONTENT -->
+          <div class="tab-content tab-content--3">
+            <div class="tab-text">
+              <h3>Drejtimi si Private Chef (2023 - Sot)</h3>
+              <p>
+                Sot ofroj shërbime ekskluzive si Private Chef për darka intime,
+                ngjarje familjare dhe evente luksoze, duke sjellë përvojën e një
+                restoranti me 5 yje direkt në shtëpinë tuaj.
+              </p>
+            </div>
+            <div class="tab-gallery">
+              <img src="event.jpg" alt="Private Chef event" />
+              <img src="speciale.jpg" alt="Pjatë ekskluzive" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKSIONI 2: RECETA (GALERI FOTOSH INTERAKTIVE ME KLIKIM) -->
+    <section class="section-recipes" id="receta">
+      <div class="container">
+        <div class="section-title">
+          <h2>Recetat e Mia Speciale</h2>
+          <p>
+            Kliko mbi foton e çdo pjate për ta zmadhuar dhe për të lexuar
+            përshkrimin e plotë të saj.
+          </p>
+        </div>
+
+        <!-- Rreshti i Fotove të Recetave (Thumbnails List) -->
+        <div class="recipe-thumbnails">
+          <div class="recipe-thumb-item recipe-thumb--active" data-recipe="1">
+            <img src="realrizoto.jpg" alt="Risotto me Kërpudha" />
+            <span class="recipe-thumb-title">Risotto Porcini</span>
+          </div>
+
+          <div class="recipe-thumb-item" data-recipe="2">
+            <img src="fileto.jpg" alt="Salmon me Pesto" />
+            <span class="recipe-thumb-title">Salmon Agrumesh</span>
+          </div>
+
+          <div class="recipe-thumb-item" data-recipe="3">
+            <img src="mish.jpg" alt="Fileto Vici" />
+            <span class="recipe-thumb-title">Fileto Sous-Vide</span>
+          </div>
+
+          <div class="recipe-thumb-item" data-recipe="4">
+            <img src="tiramisu.jpg" alt="Tiramisu" />
+            <span class="recipe-thumb-title">Tiramisu Pistaqio</span>
+          </div>
+        </div>
+
+        <!-- Paneli i Recetës së Zmadhuar -->
+        <div class="recipe-featured-display">
+          <!-- Receta 1 -->
+          <div class="recipe-details recipe-details--1 recipe-details--active">
+            <div class="featured-img-box">
+              <img src="realrizoto.jpg" alt="Risotto me Kërpudha Porcini" />
+            </div>
+            <div class="featured-text-box">
+              <span class="badge">Pjata Kryesore</span>
+              <h3>Risotto me Kërpudha Porcini & Vaj Trufeje</h3>
+              <p class="recipe-info-meta">
+                ⏱ Koha: 35 min | 👨‍🍳 Vështirësia: Mesatare
+              </p>
+              <p class="description">
+                Krem i ngrohtë orizi Carnaroli i gatuar me lëng shtëpiak
+                perimesh, kërpudha malore të freskëta, gjalpë zviceran dhe vaj
+                trufeje të zezë.
+              </p>
+            </div>
+          </div>
+
+          <!-- Receta 2 -->
+          <div class="recipe-details recipe-details--2">
+            <div class="featured-img-box">
+              <img src="fileto.jpg" alt="Salmon me Pesto Agrumesh" />
+            </div>
+            <div class="featured-text-box">
+              <span class="badge">Deti</span>
+              <h3>Salmon i Pjekur me Pesto Agrumesh</h3>
+              <p class="recipe-info-meta">
+                ⏱ Koha: 25 min | 👨‍🍳 Vështirësia: E lehtë
+              </p>
+              <p class="description">
+                Fileto e mekur salmoni me lëkurë krokante, e shoqëruar me puree
+                bizelesh me nenexhik dhe salcë delikate limoni e portokalli të
+                egër.
+              </p>
+            </div>
+          </div>
+
+          <!-- Receta 3 -->
+          <div class="recipe-details recipe-details--3">
+            <div class="featured-img-box">
+              <img src="mish.jpg" alt="Fileto Vici Sous-Vide" />
+            </div>
+            <div class="featured-text-box">
+              <span class="badge">Chef's Special</span>
+              <h3>Fileto Viçi e Maturuar Sous-Vide</h3>
+              <p class="recipe-info-meta">
+                ⏱ Koha: 45 min | 👨‍🍳 Vështirësia: Lartë
+              </p>
+              <p class="description">
+                Mish i përzgjedhur viçi i gatuar me teknikën sous-vide për 2
+                orë, i shërbyer me patate me gjalpë dhe reduktim vere të kuqe me
+                sherebelë.
+              </p>
+            </div>
+          </div>
+
+          <!-- Receta 4 -->
+          <div class="recipe-details recipe-details--4">
+            <div class="featured-img-box">
+              <img src="tiramisu.jpg" alt="Tiramisu me Krem Pistaqio" />
+            </div>
+            <div class="featured-text-box">
+              <span class="badge">Ëmbëlsirë</span>
+              <h3>Tiramisu me Krem Pistaqio Siçilian</h3>
+              <p class="recipe-info-meta">
+                ⏱ Koha: 20 min | 👨‍🍳 Vështirësia: E lehtë
+              </p>
+              <p class="description">
+                Varianti modern i desertit klasik italian me krem mascarpone të
+                rrahur dhe pistakë të bluar nga Siçilia.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKSIONI 3: REVIEWS -->
+    <section class="section-reviews" id="reviews">
+      <div class="container">
+        <div class="section-title">
+          <h2>Çfarë thonë Klientët</h2>
+          <p>
+            Përvojat e drejtpërdrejtë të klientëve tanë nga darkat private dhe
+            eventet e veçanta.
+          </p>
+        </div>
+
+        <!-- Review Submission Form -->
+        <form class="review-form" id="reviewForm">
+          <h3>Lërani Përshtypjen Tuaj</h3>
+          <input
+            type="text"
+            id="reviewerName"
+            placeholder="Emri Juaj"
+            required
+          />
+          <input
+            type="text"
+            id="reviewerEvent"
+            placeholder="Lloji i Eventit (p.sh. Darkë Ditëlindjeje)"
+            required
+          />
+          <select id="reviewerStars" required>
+            <option value="⭐⭐⭐⭐⭐">5 Yje (⭐⭐⭐⭐⭐)</option>
+            <option value="⭐⭐⭐⭐">4 Yje (⭐⭐⭐⭐)</option>
+            <option value="⭐⭐⭐">3 Yje (⭐⭐⭐)</option>
+            <option value="⭐⭐">2 Yje (⭐⭐)</option>
+            <option value="⭐">1 Yll (⭐)</option>
+          </select>
+          <textarea
+            id="reviewerText"
+            placeholder="Shkruani mendimin tuaj..."
+            rows="4"
+            required
+          ></textarea>
+          <button type="submit" class="btn btn-book">Dërgo Review</button>
+        </form>
+
+        <!-- SLIDER CONTAINER -->
+        <div class="slider">
+          <!-- Dynamic slides container -->
+          <div class="reviews-container" id="reviewsContainer"></div>
+
+          <!-- Navigation Arrows -->
+          <button class="slider-btn slider-btn--left">&larr;</button>
+          <button class="slider-btn slider-btn--right">&rarr;</button>
+
+          <!-- Dots Container -->
+          <div class="dots-container"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKSIONI 4: SOCIAL MEDIA REACH & KONTAKTE -->
+    <section class="section-social" id="social-media">
+      <div class="container">
+        <div class="section-title">
+          <h2>Lidhu me Shefin</h2>
+          <p>
+            Ndiqni rrugëtimin tim në rrjetet sociale ose më kontaktoni
+            drejtpërdrejt për rezervime.
+          </p>
+        </div>
+
+        <div class="social-card-wrapper">
+          <!-- Fotoja Rrethore e Shefit në Qendër -->
+          <div class="chef-center-profile">
+            <img src="ikon.jpg" alt="Shef Suksesi" class="chef-avatar" />
+            <h3>Shefi Juaj Privat</h3>
+            <p class="chef-tagline">
+              "Pasion, Elegancë dhe Shije në çdo pjatë."
+            </p>
+          </div>
+
+          <!-- Kontaktet & Rrjetet Sociale -->
+          <div class="contact-links-grid">
+            <a href="tel:+355696224098" class="contact-btn">
+              <span class="icon">📞</span>
+              <span class="label">+355 696224098</span>
+            </a>
+
+            <a href="mailto:Aleksander.Sogani@icloud.com" class="contact-btn">
+              <span class="icon">✉️</span>
+              <span class="label">Aleksander.Sogani@icloud.com</span>
+            </a>
+
+            <a
+              href="https://www.instagram.com/mr_sogani/"
+              target="_blank"
+              rel="noopener"
+              class="contact-btn social-inst"
+            >
+              <span class="icon">📸</span>
+              <span class="label">Instagram</span>
+            </a>
+
+            <a
+              href="https://www.tiktok.com/@mr.sogani"
+              target="_blank"
+              rel="noopener"
+              class="contact-btn social-tiktok"
+            >
+              <span class="icon">🎵</span>
+              <span class="label">TikTok</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="main-footer">
+      <div class="container">
+        <p>&copy; 2026 Kuzhina e Shefit. Të gjitha të drejtat të rezervuara.</p>
+      </div>
+    </footer>
+
+    <!-- HIDDEN MODAL -->
+    <div class="modal hidden" id="bookModal">
+      <div class="modal-content">
+        <button class="btn-close-modal">&times;</button>
+        <h2>Formulari i Rezervimit</h2>
+        <p>Plotësoni të dhënat tuaja për të rezervuar shefin:</p>
+
+        <form class="modal-form">
+          <div class="form-group">
+            <label for="name">Emri & Mbiemri:</label>
+            <input type="text" id="name" placeholder="Emri juaj..." required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="email@example.com"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="date">Data e Eventit:</label>
+            <input type="date" id="date" required />
+          </div>
+          <button type="submit" class="btn btn-submit">Dërgo Kërkesën</button>
+        </form>
+      </div>
+    </div>
+    <div class="overlay hidden" id="modalOverlay"></div>
+    <a
+      href="#"
+      onclick="
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return false;
+      "
+      class="scroll-top-btn"
+      >↑</a
+    >
+  </body>
+</html>
