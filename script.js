@@ -1,7 +1,14 @@
 "use strict";
 
+// API (backend në Render)
+const API_URL = "https://kuzhina-backend-1.onrender.com";
+
 //SELECTIMI
-const openModalBtn = document.querySelector(".btn-open-modal");
+const header = document.querySelector("#header");
+const navToggle = document.querySelector("#navToggle");
+const mainNav = document.querySelector("#mainNav");
+const navLinks = document.querySelectorAll(".nav-link");
+const openModalBtns = document.querySelectorAll(".btn-open-modal");
 const closeModalBtn = document.querySelector(".btn-close-modal");
 const overlay = document.querySelector("#modalOverlay");
 const modal = document.querySelector("#bookModal");
@@ -9,293 +16,373 @@ const tabsContainer = document.querySelector(".tab-buttons");
 const tabs = document.querySelectorAll(".tab-btn");
 const tabsContent = document.querySelectorAll(".tab-content");
 const recipeContainer = document.querySelector(".recipe-thumbnails");
-const recipe = document.querySelectorAll(".recipe-thumb-item");
+const recipes = document.querySelectorAll(".recipe-thumb-item");
 const recipeContent = document.querySelectorAll(".recipe-details");
+const reviewForm = document.querySelector("#reviewForm");
+const reviewContainer = document.querySelector("#reviewsContainer");
+const sliderControls = document.querySelector("#sliderControls");
 const leftBtn = document.querySelector(".slider-btn--left");
 const rightBtn = document.querySelector(".slider-btn--right");
 const dotsContainer = document.querySelector(".dots-container");
-const mainNav = document.querySelector(".main-nav");
-const chefIcon = document.querySelector(".chef-profile");
+const bookingForm = document.querySelector(".modal-form");
+const dateInput = document.querySelector("#date");
+const toastEl = document.querySelector("#toast");
+const scrollTopBtn = document.querySelector("#scrollTop");
+
+document.querySelector("#year").textContent = new Date().getFullYear();
+
+//HELPERS
+// Escape user text before putting it in HTML (prevents script injection)
+const escapeHTML = (str) =>
+  String(str ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+  );
+
+let toastTimer;
+const showToast = function (message, isError = false) {
+  toastEl.textContent = message;
+  toastEl.classList.toggle("is-error", isError);
+  toastEl.classList.add("is-visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("is-visible"), 4000);
+};
+
+const setLoading = function (button, loading, text) {
+  if (loading) button.dataset.label = button.textContent;
+  button.disabled = loading;
+  button.textContent = loading ? text : button.dataset.label;
+};
+
+//STICKY HEADER & SCROLL-TOP
+const onScroll = function () {
+  const scrolled = window.scrollY > 40;
+  header.classList.toggle("is-scrolled", scrolled);
+  scrollTopBtn.classList.toggle("is-visible", window.scrollY > 600);
+};
+window.addEventListener("scroll", onScroll, { passive: true });
+onScroll();
+
+scrollTopBtn.addEventListener("click", () =>
+  window.scrollTo({ top: 0, behavior: "smooth" }),
+);
+
+//MOBILE NAV
+const closeNav = function () {
+  document.body.classList.remove("nav-open", "no-scroll");
+  navToggle.setAttribute("aria-expanded", "false");
+};
+
+navToggle.addEventListener("click", function () {
+  const open = document.body.classList.toggle("nav-open");
+  document.body.classList.toggle("no-scroll", open);
+  navToggle.setAttribute("aria-expanded", String(open));
+});
+
+mainNav.addEventListener("click", function (e) {
+  if (e.target.closest("a, button")) closeNav();
+});
+
+//ACTIVE NAV LINK ON SCROLL
+const navObserver = new IntersectionObserver(
+  function (entries) {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      navLinks.forEach((link) =>
+        link.classList.toggle(
+          "is-active",
+          link.getAttribute("href") === `#${entry.target.id}`,
+        ),
+      );
+    });
+  },
+  { rootMargin: "-45% 0px -50% 0px" },
+);
+document.querySelectorAll("main section[id]").forEach((s) => navObserver.observe(s));
 
 //MODAL WINDOW
 const openModal = function (e) {
   e.preventDefault();
   modal.classList.remove("hidden");
   overlay.classList.remove("hidden");
+  document.body.classList.add("no-scroll");
+  setTimeout(() => modal.querySelector("input")?.focus(), 150);
 };
 
 const closeModal = function () {
   modal.classList.add("hidden");
   overlay.classList.add("hidden");
+  if (!document.body.classList.contains("nav-open")) {
+    document.body.classList.remove("no-scroll");
+  }
 };
 
-openModalBtn.addEventListener("click", openModal);
+openModalBtns.forEach((btn) => btn.addEventListener("click", openModal));
 closeModalBtn.addEventListener("click", closeModal);
 overlay.addEventListener("click", closeModal);
 
 document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && !modal.classList.contains("hidden")) {
-    closeModal();
-  }
+  if (e.key !== "Escape") return;
+  if (!modal.classList.contains("hidden")) closeModal();
+  else if (document.body.classList.contains("nav-open")) closeNav();
 });
+
+// Booking date cannot be in the past
+dateInput.min = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+  .toISOString()
+  .split("T")[0];
 
 //TABBED COMPONENT
-if (tabsContainer) {
-  tabsContainer.addEventListener("click", function (e) {
-    const clicked = e.target.closest(".tab-btn");
-    //Guard close
-    if (!clicked) return;
+tabsContainer.addEventListener("click", function (e) {
+  const clicked = e.target.closest(".tab-btn");
+  //Guard clause
+  if (!clicked) return;
 
-    tabs.forEach((tab) => tab.classList.remove("tab-btn--active"));
-    tabsContent.forEach((tab) => tab.classList.remove("tab-content--active"));
-
-    clicked.classList.add("tab-btn--active");
-
-    document
-      .querySelector(`.tab-content--${clicked.dataset.tab}`)
-      ?.classList.add("tab-content--active");
+  tabs.forEach((tab) => {
+    tab.classList.remove("tab-btn--active");
+    tab.setAttribute("aria-selected", "false");
   });
-}
+  tabsContent.forEach((tab) => tab.classList.remove("tab-content--active"));
+
+  clicked.classList.add("tab-btn--active");
+  clicked.setAttribute("aria-selected", "true");
+
+  document
+    .querySelector(`.tab-content--${clicked.dataset.tab}`)
+    ?.classList.add("tab-content--active");
+});
 
 //RECIPE COMPONENT
-if (recipeContainer) {
-  recipeContainer.addEventListener("click", function (e) {
-    const clicked = e.target.closest(".recipe-thumb-item");
-    //Guard close
-    if (!clicked) return;
+recipeContainer.addEventListener("click", function (e) {
+  const clicked = e.target.closest(".recipe-thumb-item");
+  //Guard clause
+  if (!clicked) return;
 
-    recipe.forEach((r) => r.classList.remove("recipe-thumb--active"));
-    recipeContent.forEach((r) => r.classList.remove("recipe-details--active"));
+  recipes.forEach((r) => r.classList.remove("recipe-thumb--active"));
+  recipeContent.forEach((r) => r.classList.remove("recipe-details--active"));
 
-    clicked.classList.add("recipe-thumb--active");
+  clicked.classList.add("recipe-thumb--active");
 
-    document
-      .querySelector(`.recipe-details--${clicked.dataset.recipe}`)
-      ?.classList.add("recipe-details--active");
-  });
-}
-
-//REVIEWS SLIDER
-/*let curSlide = 0;
-const maxSlide = slides.length;
-
-const goToSlide = function (slide) {
-  slides.forEach((s) => s.classList.remove("slide--active"));
-  slides[slide].classList.add("slide--active");
-};
-
-const nextSlide = function () {
-  if (curSlide === maxSlide - 1) {
-    curSlide = 0;
-  } else {
-    curSlide++;
-  }
-  goToSlide(curSlide);
-  activeDots(curSlide);
-};
-
-const prevSlide = function () {
-  if (curSlide === 0) {
-    curSlide = maxSlide - 1;
-  } else {
-    curSlide--;
-  }
-  goToSlide(curSlide);
-  activeDots(curSlide);
-};
-
-leftBtn.addEventListener("click", prevSlide);
-rightBtn.addEventListener("click", nextSlide);
-
-const createDots = function () {
-  slides.forEach((_, i) => {
-    const html = `<button class="dot" data-slide="${i}"></button>`;
-    dotsContainer.insertAdjacentHTML("beforeend", html);
-  });
-};
-
-const activeDots = function (slide) {
-  const dots = document.querySelectorAll(".dot");
-  dots.forEach((dot) => dot.classList.remove("dot--active"));
   document
-    .querySelector(`.dot[data-slide="${slide}"]`)
-    ?.classList.add("dot--active");
-};
-
-//Event Delegation
-dotsContainer.addEventListener("click", function (e) {
-  //Check if clicked element is dot(contains dot)
-  if (e.target.classList.contains("dot")) {
-    //Read the slide index from data-slide attribute
-    const slide = Number(e.target.dataset.slide);
-
-    curSlide = slide;
-    goToSlide(curSlide);
-    activeDots(curSlide);
-  }
+    .querySelector(`.recipe-details--${clicked.dataset.recipe}`)
+    ?.classList.add("recipe-details--active");
 });
 
-goToSlide(0);
-createDots();
-activeDots(0);*/
-
-//HEADER VISIBILITY
-
-const handleHover = function (e, opacity) {
-  if (e.target.closest("a")) {
-    const link = e.target;
-    const siblings = link.closest(".main-nav").querySelectorAll("a");
-
-    siblings.forEach((el) => {
-      if (el != link) {
-        el.style.opacity = opacity;
-      }
-      chefIcon.style.opacity = opacity;
-    });
-  }
-};
-//Event Listener with parameters
-mainNav.addEventListener("mouseover", function (e) {
-  handleHover(e, 0.5);
-});
-mainNav.addEventListener("mouseout", function (e) {
-  handleHover(e, 1);
-});
-
-// 1. Select all sections to observe
-const allSections = document.querySelectorAll("section");
-
-// 2. Callback function executed when section intersects
+//REVEAL SECTIONS ON SCROLL
 const revealSection = function (entries, observer) {
   entries.forEach((entry) => {
-    // Guard clause: stop execution if section is not intersecting
     if (!entry.isIntersecting) return;
-
-    // Reveal section by removing hidden class
-    entry.target.classList.remove("section--hidden");
-
-    // Unobserve section to prevent re-triggering animation
+    entry.target.classList.remove("reveal--hidden");
     observer.unobserve(entry.target);
   });
 };
 
-// 3. Create the Intersection Observer instance
 const sectionObserver = new IntersectionObserver(revealSection, {
-  root: null, // Uses the browser viewport
-  threshold: 0.2, // Triggers when 20% of section is visible
+  root: null,
+  threshold: 0.12,
 });
 
-// 4. Attach observer and initial hidden class to each section
-allSections.forEach((section) => {
+document.querySelectorAll(".reveal").forEach((section) => {
+  // Only hide sections that are still below the viewport
+  if (section.getBoundingClientRect().top < window.innerHeight) return;
+  section.classList.add("reveal--hidden");
   sectionObserver.observe(section);
-  section.classList.add("section--hidden");
 });
 
-//REVIEW SUBMIT AND CONTAINER FEATURE
-const reviewForm = document.querySelector("#reviewForm");
-const reviewContainer = document.querySelector("#reviewsContainer");
-
+//REVIEWS SLIDER
 let curSlide = 0;
+let autoplay;
 
-//1. HELPER: Generate Slide HTML
-const createReviewCard = function (name, event, stars, text) {
+// Old reviews store stars as "⭐⭐⭐⭐⭐", new ones as a number
+const countStars = function (stars) {
+  const n = Number(stars);
+  if (Number.isInteger(n)) return Math.min(Math.max(n, 0), 5);
+  return [...String(stars)].filter((c) => c === "⭐").length;
+};
+
+const renderStars = function (stars) {
+  const n = countStars(stars);
+  return "★".repeat(n) + `<span class="star-off">${"★".repeat(5 - n)}</span>`;
+};
+
+// Generate review card
+const createReviewCard = function ({ name, event, stars, text }) {
+  const n = countStars(stars);
   return `
-  <div class="slide">
-      <div class="testimonial-card">
-        <div class="stars">${stars}</div>
-        <p class="review-text">"${text}"</p>
+    <div class="slide">
+      <article class="testimonial-card">
+        <div class="stars" aria-label="${n} nga 5 yje">${renderStars(stars)}</div>
+        <p class="review-text">“${escapeHTML(text)}”</p>
         <div class="client-info">
+          <span class="client-avatar" aria-hidden="true">${escapeHTML(String(name).trim().charAt(0))}</span>
           <div>
-            <h4 class="client-name">${name}</h4>
-            <span class="client-event">${event}</span>
+            <h4 class="client-name">${escapeHTML(name)}</h4>
+            <span class="client-event">${escapeHTML(event)}</span>
           </div>
         </div>
-      </div>
+      </article>
     </div>
   `;
 };
 
-//2. SLIDER Navigation Functions
+const getSlides = () => reviewContainer.querySelectorAll(".slide");
+
 const goToSlide = function (slide) {
-  const slides = document.querySelectorAll(".slide");
-  if (slides.length === 0) return;
-
-  slides.forEach((slide) => slide.classList.remove("slide--active"));
-  slides[slide]?.classList.add("slide--active");
-};
-
-const activeDots = function (slide) {
-  const dots = document.querySelectorAll(".dot");
-  dots.forEach((dot) => dot.classList.remove("dot--active"));
-  document
-    .querySelector(`.dot[data-slide="${slide}"]`)
-    ?.classList.add("dot--active");
+  getSlides().forEach((s, i) => s.classList.toggle("slide--active", i === slide));
+  dotsContainer
+    .querySelectorAll(".dot")
+    .forEach((dot, i) => dot.classList.toggle("dot--active", i === slide));
 };
 
 const createDots = function () {
-  const slides = document.querySelectorAll(".slide");
   dotsContainer.innerHTML = "";
-  slides.forEach((_, i) => {
-    const html = `<button class="dot" data-slide="${i}"></button>`;
-    dotsContainer.insertAdjacentHTML("beforeend", html);
+  getSlides().forEach((_, i) => {
+    dotsContainer.insertAdjacentHTML(
+      "beforeend",
+      `<button class="dot" data-slide="${i}" aria-label="Review ${i + 1}"></button>`,
+    );
   });
 };
 
 const nextSlide = function () {
-  const slides = document.querySelectorAll(".slide");
-  if (slides.length === 0) return;
-
-  curSlide = curSlide === slides.length - 1 ? 0 : curSlide + 1;
+  const total = getSlides().length;
+  if (total === 0) return;
+  curSlide = curSlide === total - 1 ? 0 : curSlide + 1;
   goToSlide(curSlide);
-  activeDots(curSlide);
 };
 
 const prevSlide = function () {
-  const slides = document.querySelectorAll(".slide");
-  if (slides.length === 0) return;
-
-  curSlide = curSlide === 0 ? slides.length - 1 : curSlide - 1;
+  const total = getSlides().length;
+  if (total === 0) return;
+  curSlide = curSlide === 0 ? total - 1 : curSlide - 1;
   goToSlide(curSlide);
-  activeDots(curSlide);
 };
 
-//3. Event Listeners
-leftBtn.addEventListener("click", prevSlide);
-rightBtn.addEventListener("click", nextSlide);
+const startAutoplay = function () {
+  clearInterval(autoplay);
+  if (getSlides().length > 1) autoplay = setInterval(nextSlide, 7000);
+};
+
+leftBtn.addEventListener("click", () => {
+  prevSlide();
+  startAutoplay();
+});
+rightBtn.addEventListener("click", () => {
+  nextSlide();
+  startAutoplay();
+});
 
 dotsContainer.addEventListener("click", function (e) {
-  if (e.target.classList.contains("dot")) {
-    curSlide = Number(e.target.dataset.slide);
+  if (!e.target.classList.contains("dot")) return;
+  curSlide = Number(e.target.dataset.slide);
+  goToSlide(curSlide);
+  startAutoplay();
+});
+
+document.addEventListener("keydown", function (e) {
+  if (!modal.classList.contains("hidden")) return;
+  if (e.target.closest("input, textarea")) return;
+  if (e.key === "ArrowLeft") prevSlide();
+  if (e.key === "ArrowRight") nextSlide();
+});
+
+const setReviewsStatus = function (message) {
+  reviewContainer.innerHTML = `<p class="reviews-status">${message}</p>`;
+  sliderControls.classList.add("hidden");
+};
+
+// LOAD REVIEWS FROM DATABASE
+const loadReviews = async function () {
+  try {
+    const response = await fetch(`${API_URL}/api/reviews`);
+    if (!response.ok) throw new Error("Failed to load reviews");
+
+    const reviews = await response.json();
+
+    if (reviews.length === 0) {
+      setReviewsStatus("Ende nuk ka reviews. Bëhuni i pari që ndani përshtypjen tuaj!");
+      return;
+    }
+
+    reviewContainer.innerHTML = reviews.map(createReviewCard).join("");
+    sliderControls.classList.toggle("hidden", reviews.length < 2);
+
+    createDots();
+    curSlide = 0;
     goToSlide(curSlide);
-    activeDots(curSlide);
+    startAutoplay();
+  } catch (error) {
+    console.error("Error loading reviews:", error);
+    setReviewsStatus("Reviews nuk mund të ngarkohen tani. Provoni më vonë.");
+  }
+};
+
+// SUBMIT REVIEW TO DATABASE
+reviewForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const submitBtn = reviewForm.querySelector("button[type='submit']");
+
+  const name = document.querySelector("#reviewerName").value.trim();
+  const event = document.querySelector("#reviewerEvent").value.trim();
+  const stars = reviewForm.querySelector("input[name='stars']:checked").value;
+  const text = document.querySelector("#reviewerText").value.trim();
+
+  setLoading(submitBtn, true, "Duke dërguar…");
+
+  try {
+    const response = await fetch(`${API_URL}/api/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, event, stars, text }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to submit review");
+    }
+
+    reviewForm.reset();
+    await loadReviews();
+    showToast("Faleminderit! Review u dërgua me sukses.");
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    showToast("Ndodhi një problem gjatë dërgimit. Provoni përsëri.", true);
+  } finally {
+    setLoading(submitBtn, false);
   }
 });
 
-rightBtn.classList.add("hidden");
-leftBtn.classList.add("hidden");
-
-//4. FORM Submission Event
-reviewForm.addEventListener("submit", function (e) {
+// BOOKING FORM
+bookingForm.addEventListener("submit", async function (e) {
   e.preventDefault();
+  const submitBtn = bookingForm.querySelector("button[type='submit']");
 
-  const name = document.querySelector("#reviewerName").value;
-  const event = document.querySelector("#reviewerEvent").value;
-  const stars = document.querySelector("#reviewerStars").value;
-  const text = document.querySelector("#reviewerText").value;
+  const name = document.querySelector("#name").value.trim();
+  const email = document.querySelector("#email").value.trim();
+  const date = dateInput.value;
 
-  rightBtn.classList.remove("hidden");
-  leftBtn.classList.remove("hidden");
+  setLoading(submitBtn, true, "Duke dërguar…");
 
-  const slideHTML = createReviewCard(name, event, stars, text);
-  reviewContainer.insertAdjacentHTML("beforeend", slideHTML);
+  try {
+    const response = await fetch(`${API_URL}/api/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, date }),
+    });
 
-  //Re-build dots & jump to newly added slide
-  createDots();
-  const slides = document.querySelectorAll(".slide");
-  curSlide = slides.length - 1;
-  goToSlide(curSlide);
-  activeDots(curSlide);
+    if (!response.ok) throw new Error("Failed to submit booking");
 
-  //Clear inputs
-  reviewForm.reset();
+    bookingForm.reset();
+    closeModal();
+    showToast("Kërkesa u dërgua! Do t'ju kontaktojmë së shpejti.");
+  } catch (error) {
+    console.error("Error submitting booking:", error);
+    showToast("Ndodhi një problem gjatë rezervimit. Provoni përsëri.", true);
+  } finally {
+    setLoading(submitBtn, false);
+  }
 });
+
+// Load database reviews when page opens
+loadReviews();
