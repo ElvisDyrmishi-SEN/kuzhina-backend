@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
 const fs = require("fs");
+const crypto = require("crypto");
 const path = require("path");
 require("dotenv").config();
 
@@ -164,6 +165,90 @@ app.post("/api/bookings", rateLimit, (req, res) => {
       id: result.insertId,
     });
   });
+});
+
+// ==========================================================================
+// ADMIN (password is set as ADMIN_PASSWORD in Render's environment variables)
+// ==========================================================================
+const failedLogins = new Map();
+const LOGIN_MAX_FAILS = 10;
+
+const hash = (value) => crypto.createHash("sha256").update(value).digest();
+
+const requireAdmin = (req, res, next) => {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) {
+    return res.status(503).json({ error: "Admin is not configured" });
+  }
+
+  const now = Date.now();
+  const fails = (failedLogins.get(req.ip) || []).filter(
+    (time) => now - time < RATE_WINDOW,
+  );
+
+  if (fails.length >= LOGIN_MAX_FAILS) {
+    return res.status(429).json({
+      error: "Too many wrong passwords. Try again in 15 minutes.",
+    });
+  }
+
+  const given = (req.get("Authorization") || "").replace(/^Bearer /, "");
+
+  if (!crypto.timingSafeEqual(hash(given), hash(expected))) {
+    fails.push(now);
+    failedLogins.set(req.ip, fails);
+    return res.status(401).json({ error: "Wrong password" });
+  }
+
+  next();
+};
+
+// Shared handler for admin list/delete queries
+const sendQuery = (res, label) => (err, result) => {
+  if (err) {
+    console.error(`${label} ERROR:`, err);
+    return res.status(500).json({ error: "Database error" });
+  }
+  res.json(result);
+};
+
+// LOGIN CHECK
+app.get("/api/admin/check", requireAdmin, (req, res) => {
+  res.json({ ok: true });
+});
+
+// ALL REVIEWS
+app.get("/api/admin/reviews", requireAdmin, (req, res) => {
+  db.query(
+    "SELECT id, name, event, stars, text, created_at FROM reviews ORDER BY id DESC",
+    sendQuery(res, "ADMIN REVIEWS"),
+  );
+});
+
+// ALL BOOKINGS
+app.get("/api/admin/bookings", requireAdmin, (req, res) => {
+  db.query(
+    "SELECT id, name, email, date, created_at FROM bookings ORDER BY id DESC",
+    sendQuery(res, "ADMIN BOOKINGS"),
+  );
+});
+
+// DELETE REVIEW
+app.delete("/api/admin/reviews/:id", requireAdmin, (req, res) => {
+  db.query(
+    "DELETE FROM reviews WHERE id = ?",
+    [Number(req.params.id)],
+    sendQuery(res, "DELETE REVIEW"),
+  );
+});
+
+// DELETE BOOKING
+app.delete("/api/admin/bookings/:id", requireAdmin, (req, res) => {
+  db.query(
+    "DELETE FROM bookings WHERE id = ?",
+    [Number(req.params.id)],
+    sendQuery(res, "DELETE BOOKING"),
+  );
 });
 
 // START SERVER

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="sq">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Admin | Kuzhina e Shefit</title>
+    <link rel="icon" type="image/jpeg" href="ikon.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      [hidden] {
+        display: none !important;
+      }
+
+      body {
+        background: var(--cream);
+        min-height: 100vh;
+      }
+
+      .admin-header {
+        background: var(--ink);
+        padding: 16px 0;
+      }
+
+      .admin-header .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .admin-header .btn-outline {
+        padding: 10px 20px;
+        font-size: 0.75rem;
+      }
+
+      .admin-main {
+        padding-top: 48px;
+        padding-bottom: 80px;
+      }
+
+      .login-card {
+        max-width: 400px;
+        margin: 10vh auto 0;
+        background: var(--paper);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-soft);
+        padding: 44px 36px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .login-card h1 {
+        font-size: 2.2rem;
+      }
+
+      .login-card input {
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .login-error {
+        color: #c0392b;
+        font-size: 0.9rem;
+        min-height: 1.2em;
+      }
+
+      .admin-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      .admin-tab {
+        padding: 10px 20px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        background: var(--paper);
+        border: 1px solid var(--line);
+      }
+
+      .admin-tab--active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--text-light);
+      }
+
+      .admin-tab .count {
+        opacity: 0.6;
+        margin-left: 4px;
+      }
+
+      .admin-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .admin-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 20px 22px;
+      }
+
+      .admin-item-body {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .admin-item .stars {
+        font-size: 0.95rem;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+      }
+
+      .admin-item .stars .star-off {
+        color: var(--line);
+      }
+
+      .admin-item-text {
+        font-size: 1.05rem;
+        margin-bottom: 8px;
+      }
+
+      .admin-item-meta {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .admin-item-meta strong {
+        color: var(--text);
+      }
+
+      .btn-delete {
+        flex-shrink: 0;
+        padding: 9px 16px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #c0392b;
+        border: 1px solid rgba(192, 57, 43, 0.35);
+        transition: var(--transition);
+      }
+
+      .btn-delete:hover {
+        background: #c0392b;
+        color: #fff;
+      }
+
+      .admin-empty {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 48px 20px;
+        border: 1px dashed var(--line);
+        border-radius: var(--radius-sm);
+      }
+
+      @media (max-width: 600px) {
+        .admin-item {
+          flex-direction: column;
+        }
+      }
+    </style>
+    <script defer src="admin.js"></script>
+  </head>
+  <body>
+    <header class="admin-header">
+      <div class="container">
+        <a href="/" class="brand">
+          <img src="ikon.jpg" alt="" class="brand-img" />
+          <span class="brand-text">
+            <span class="brand-name">Kuzhina e Shefit</span>
+            <span class="brand-sub">Admin</span>
+          </span>
+        </a>
+        <button class="btn btn-outline hidden" id="logoutBtn">Dil</button>
+      </div>
+    </header>
+
+    <main class="admin-main container">
+      <!-- LOGIN -->
+      <form class="login-card" id="loginForm">
+        <p class="eyebrow">Paneli i Shefit</p>
+        <h1>Hyr</h1>
+        <div class="field">
+          <label for="password">Fjalëkalimi</label>
+          <input type="password" id="password" autocomplete="current-password" required />
+        </div>
+        <p class="login-error" id="loginError"></p>
+        <button type="submit" class="btn btn-gold btn-block">Hyr</button>
+      </form>
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" hidden>
+        <div class="admin-tabs">
+          <button class="admin-tab admin-tab--active" data-view="reviews">
+            Reviews <span class="count" id="reviewsCount"></span>
+          </button>
+          <button class="admin-tab" data-view="bookings">
+            Rezervime <span class="count" id="bookingsCount"></span>
+          </button>
+        </div>
+        <div class="admin-list" id="list"></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
