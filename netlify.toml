@@ -1,0 +1,35 @@
+# Netlify only hosts the website (index.html, style.css, script.js, images).
+# The backend runs on Render, so hide the backend files from visitors.
+
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/server.js"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/schema.sql"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/404"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/settings.json"
+  to = "/404"
+  status = 404
+  force = true
