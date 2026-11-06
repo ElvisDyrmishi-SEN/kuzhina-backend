@@ -825,6 +825,11 @@ body.nav-open .nav-toggle span:nth-child(3) {
   padding: 40px;
 }
 
+.recipe-featured .reviews-status {
+  color: var(--text-muted);
+  border: none;
+}
+
 .slide {
   display: none;
 }

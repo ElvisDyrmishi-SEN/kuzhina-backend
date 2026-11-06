@@ -13,11 +13,17 @@ const tabs = document.querySelectorAll(".admin-tab");
 const list = document.querySelector("#list");
 const reviewsCount = document.querySelector("#reviewsCount");
 const bookingsCount = document.querySelector("#bookingsCount");
+const recipesCount = document.querySelector("#recipesCount");
+const recipeForm = document.querySelector("#recipeForm");
+const photoInput = document.querySelector("#recipePhoto");
+const photoPreview = document.querySelector("#photoPreview");
+const photoHint = document.querySelector("#photoHint");
 const toastEl = document.querySelector("#toast");
 
 let password = sessionStorage.getItem("adminPassword") || "";
 let view = "reviews";
-let data = { reviews: [], bookings: [] };
+let data = { reviews: [], bookings: [], recipes: [] };
+let photoData = "";
 
 //HELPERS
 const escapeHTML = (str) =>
@@ -44,7 +50,7 @@ const countStars = (stars) => [...String(stars)].filter((c) => c === "⭐").leng
 const api = async function (path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: { Authorization: `Bearer ${password}` },
+    headers: { Authorization: `Bearer ${password}`, ...options.headers },
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -84,31 +90,138 @@ const renderBooking = (b) => `
   </article>
 `;
 
+const recipeImageSrc = (r) =>
+  r.image_url ? `/${escapeHTML(r.image_url)}` : `${API_URL}/api/recipes/${r.id}/image`;
+
+const renderRecipe = (r) => `
+  <article class="admin-item admin-item--recipe">
+    <img class="admin-item-thumb" src="${recipeImageSrc(r)}" alt="" loading="lazy" />
+    <div class="admin-item-body">
+      <p class="admin-item-text"><strong>${escapeHTML(r.title)}</strong></p>
+      <p class="admin-item-meta">${[r.category, r.prep_time, r.difficulty]
+        .filter(Boolean)
+        .map(escapeHTML)
+        .join(" · ")}</p>
+    </div>
+    <button class="btn-delete" data-type="recipes" data-id="${r.id}">Fshi</button>
+  </article>
+`;
+
+const RENDERERS = { reviews: renderReview, bookings: renderBooking, recipes: renderRecipe };
+const EMPTY_TEXT = {
+  reviews: "Nuk ka reviews.",
+  bookings: "Nuk ka rezervime.",
+  recipes: "Nuk ka receta. Shtoni të parën me formularin më lart.",
+};
+
 const render = function () {
   reviewsCount.textContent = data.reviews.length;
   bookingsCount.textContent = data.bookings.length;
+  recipesCount.textContent = data.recipes.length;
   tabs.forEach((t) => t.classList.toggle("admin-tab--active", t.dataset.view === view));
+  recipeForm.hidden = view !== "recipes";
 
   const items = data[view];
   if (items.length === 0) {
-    list.innerHTML = `<p class="admin-empty">${
-      view === "reviews" ? "Nuk ka reviews." : "Nuk ka rezervime."
-    }</p>`;
+    list.innerHTML = `<p class="admin-empty">${EMPTY_TEXT[view]}</p>`;
     return;
   }
-  list.innerHTML = items.map(view === "reviews" ? renderReview : renderBooking).join("");
+  list.innerHTML = items.map(RENDERERS[view]).join("");
 };
 
 //LOAD DATA
 const loadAll = async function () {
   list.innerHTML = `<p class="admin-empty">Duke ngarkuar… (mund të zgjasë deri në 1 minutë)</p>`;
-  const [reviews, bookings] = await Promise.all([
+  const [reviews, bookings, recipes] = await Promise.all([
     api("/api/admin/reviews"),
     api("/api/admin/bookings"),
+    api("/api/recipes"),
   ]);
-  data = { reviews, bookings };
+  data = { reviews, bookings, recipes };
   render();
 };
+
+//ADD RECIPE
+// Shrink the photo in the browser so uploads stay small and the site stays fast
+const resizePhoto = (file, maxSize = 1400) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff"; // transparent PNGs get a white background
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(img.src);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => reject(new Error("Unsupported image"));
+    img.src = URL.createObjectURL(file);
+  });
+
+const resetPhoto = function () {
+  photoData = "";
+  photoInput.value = "";
+  photoPreview.hidden = true;
+  photoHint.hidden = false;
+};
+
+photoInput.addEventListener("change", async function () {
+  const file = photoInput.files[0];
+  if (!file) return resetPhoto();
+
+  try {
+    photoData = await resizePhoto(file);
+    photoPreview.src = photoData;
+    photoPreview.hidden = false;
+    photoHint.hidden = true;
+  } catch {
+    resetPhoto();
+    showToast("Kjo foto nuk mund të hapet. Provoni një JPG ose PNG.", true);
+  }
+});
+
+recipeForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  if (!photoData) return showToast("Zgjidhni një foto për recetën.", true);
+
+  const submitBtn = recipeForm.querySelector("button[type='submit']");
+  const value = (id) => document.querySelector(id).value.trim();
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Duke ruajtur…";
+
+  try {
+    await api("/api/admin/recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: value("#recipeTitle"),
+        short_title: value("#recipeShort"),
+        category: value("#recipeCategory"),
+        prep_time: value("#recipeTime"),
+        difficulty: value("#recipeDifficulty"),
+        description: value("#recipeDescription"),
+        image: photoData,
+      }),
+    });
+
+    recipeForm.reset();
+    resetPhoto();
+    data.recipes = await api("/api/recipes");
+    render();
+    showToast("Receta u shtua! Tani duket edhe në faqen kryesore.");
+  } catch (error) {
+    if (error.status === 401) return showLogin("Sesioni skadoi. Hyni përsëri.");
+    showToast("Receta nuk u ruajt. Provoni përsëri.", true);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Shto recetën";
+  }
+});
 
 const showDashboard = function () {
   loginForm.hidden = true;
@@ -173,7 +286,7 @@ list.addEventListener("click", async function (e) {
   if (!btn) return;
 
   const { type, id } = btn.dataset;
-  const what = type === "reviews" ? "këtë review" : "këtë rezervim";
+  const what = { reviews: "këtë review", bookings: "këtë rezervim", recipes: "këtë recetë" }[type];
   if (!confirm(`Jeni i sigurt që doni të fshini ${what}? Nuk mund të kthehet mbrapsht.`)) return;
 
   btn.disabled = true;

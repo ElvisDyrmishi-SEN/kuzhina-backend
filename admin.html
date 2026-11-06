@@ -168,9 +168,128 @@
         border-radius: var(--radius-sm);
       }
 
+      /* Recipes */
+      .recipe-form {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 32px;
+        margin-bottom: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .recipe-form h2 {
+        font-size: 1.8rem;
+      }
+
+      .photo-picker {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 16 / 9;
+        max-height: 300px;
+        border: 2px dashed var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--cream);
+        color: var(--text-muted);
+        font-weight: 600;
+        cursor: pointer;
+        overflow: hidden;
+        transition: var(--transition);
+      }
+
+      .photo-picker:hover {
+        border-color: var(--gold);
+      }
+
+      .photo-picker input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .photo-picker img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+      }
+
+      .field--wide {
+        grid-column: 1 / -1;
+      }
+
+      .recipe-form .field label {
+        color: var(--text-muted);
+      }
+
+      .recipe-form input,
+      .recipe-form select,
+      .recipe-form textarea {
+        width: 100%;
+        padding: 13px 15px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: #fff;
+        outline: none;
+        font-size: 0.97rem;
+      }
+
+      .recipe-form input:focus,
+      .recipe-form select:focus,
+      .recipe-form textarea:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 4px var(--gold-soft);
+      }
+
+      .recipe-form .btn {
+        align-self: flex-start;
+      }
+
+      .admin-item-thumb {
+        width: 96px;
+        height: 72px;
+        flex-shrink: 0;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .admin-item--recipe {
+        align-items: center;
+      }
+
+      .admin-item--recipe .admin-item-body {
+        flex: 1;
+      }
+
       @media (max-width: 600px) {
         .admin-item {
           flex-direction: column;
+        }
+
+        .admin-item--recipe {
+          align-items: flex-start;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .recipe-form {
+          padding: 24px 18px;
+        }
+
+        .admin-tabs {
+          flex-wrap: wrap;
         }
       }
     </style>
@@ -212,7 +331,56 @@
           <button class="admin-tab" data-view="bookings">
             Rezervime <span class="count" id="bookingsCount"></span>
           </button>
+          <button class="admin-tab" data-view="recipes">
+            Receta <span class="count" id="recipesCount"></span>
+          </button>
         </div>
+
+        <!-- ADD RECIPE -->
+        <form class="recipe-form" id="recipeForm" hidden>
+          <h2>Shto recetë të re</h2>
+
+          <label class="photo-picker" for="recipePhoto">
+            <img id="photoPreview" alt="" hidden />
+            <span id="photoHint">+ Zgjidh foton e pjatës</span>
+            <input type="file" id="recipePhoto" accept="image/jpeg,image/png,image/webp" required />
+          </label>
+
+          <div class="form-grid">
+            <div class="field field--wide">
+              <label for="recipeTitle">Titulli i plotë</label>
+              <input type="text" id="recipeTitle" maxlength="160" placeholder="p.sh. Risotto me Kërpudha Porcini" required />
+            </div>
+            <div class="field">
+              <label for="recipeShort">Titulli i shkurtër</label>
+              <input type="text" id="recipeShort" maxlength="60" placeholder="Shfaqet mbi foton e vogël" />
+            </div>
+            <div class="field">
+              <label for="recipeCategory">Kategoria</label>
+              <input type="text" id="recipeCategory" maxlength="60" placeholder="p.sh. Pjata Kryesore" />
+            </div>
+            <div class="field">
+              <label for="recipeTime">Koha</label>
+              <input type="text" id="recipeTime" maxlength="40" placeholder="p.sh. 35 min" />
+            </div>
+            <div class="field">
+              <label for="recipeDifficulty">Vështirësia</label>
+              <select id="recipeDifficulty">
+                <option value="">—</option>
+                <option>E lehtë</option>
+                <option>Mesatare</option>
+                <option>E lartë</option>
+              </select>
+            </div>
+            <div class="field field--wide">
+              <label for="recipeDescription">Përshkrimi</label>
+              <textarea id="recipeDescription" rows="4" maxlength="2000" placeholder="Përbërësit dhe si përgatitet pjata…" required></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-gold">Shto recetën</button>
+        </form>
+
         <div class="admin-list" id="list"></div>
       </section>
     </main>

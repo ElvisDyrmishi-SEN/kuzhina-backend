@@ -24,6 +24,23 @@ CREATE TABLE IF NOT EXISTS bookings (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Recipes shown in the "Receta" section, managed from the admin page.
+-- The first recipes use photos from the website (image_url);
+-- photos uploaded from the admin page are stored in `image`.
+CREATE TABLE IF NOT EXISTS recipes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(160) NOT NULL,
+  short_title VARCHAR(60) NOT NULL,
+  category VARCHAR(60),
+  prep_time VARCHAR(40),
+  difficulty VARCHAR(40),
+  description TEXT NOT NULL,
+  image_url VARCHAR(255),
+  image MEDIUMBLOB,
+  image_type VARCHAR(40),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- --------------------------------------------------------------------------
 -- Useful queries
 -- --------------------------------------------------------------------------

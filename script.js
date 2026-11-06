@@ -16,8 +16,7 @@ const tabsContainer = document.querySelector(".tab-buttons");
 const tabs = document.querySelectorAll(".tab-btn");
 const tabsContent = document.querySelectorAll(".tab-content");
 const recipeContainer = document.querySelector(".recipe-thumbnails");
-const recipes = document.querySelectorAll(".recipe-thumb-item");
-const recipeContent = document.querySelectorAll(".recipe-details");
+const recipeFeatured = document.querySelector(".recipe-featured");
 const reviewForm = document.querySelector("#reviewForm");
 const reviewContainer = document.querySelector("#reviewsContainer");
 const sliderControls = document.querySelector("#sliderControls");
@@ -159,15 +158,75 @@ recipeContainer.addEventListener("click", function (e) {
   //Guard clause
   if (!clicked) return;
 
-  recipes.forEach((r) => r.classList.remove("recipe-thumb--active"));
-  recipeContent.forEach((r) => r.classList.remove("recipe-details--active"));
+  // Recipes are re-rendered from the database, so look them up each time
+  recipeContainer
+    .querySelectorAll(".recipe-thumb-item")
+    .forEach((r) => r.classList.remove("recipe-thumb--active"));
+  recipeFeatured
+    .querySelectorAll(".recipe-details")
+    .forEach((r) => r.classList.remove("recipe-details--active"));
 
   clicked.classList.add("recipe-thumb--active");
 
-  document
+  recipeFeatured
     .querySelector(`.recipe-details--${clicked.dataset.recipe}`)
     ?.classList.add("recipe-details--active");
 });
+
+// LOAD RECIPES FROM DATABASE
+// The recipes written in index.html show first, then get replaced by the
+// ones the chef manages from the admin page.
+const recipeImageSrc = (r) =>
+  r.image_url ? escapeHTML(r.image_url) : `${API_URL}/api/recipes/${r.id}/image`;
+
+const createRecipeThumb = (r, i) => `
+  <button class="recipe-thumb-item ${i === 0 ? "recipe-thumb--active" : ""}" data-recipe="${r.id}">
+    <img src="${recipeImageSrc(r)}" alt="" loading="lazy" />
+    <span class="recipe-thumb-title">${escapeHTML(r.short_title)}</span>
+  </button>
+`;
+
+const createRecipeDetails = (r, i) => `
+  <article class="recipe-details recipe-details--${r.id} ${i === 0 ? "recipe-details--active" : ""}">
+    <div class="featured-img">
+      <img src="${recipeImageSrc(r)}" alt="${escapeHTML(r.title)}" loading="lazy" />
+    </div>
+    <div class="featured-text">
+      ${r.category ? `<span class="badge">${escapeHTML(r.category)}</span>` : ""}
+      <h3>${escapeHTML(r.title)}</h3>
+      ${
+        r.prep_time || r.difficulty
+          ? `<ul class="recipe-meta">
+              ${r.prep_time ? `<li><strong>Koha</strong> ${escapeHTML(r.prep_time)}</li>` : ""}
+              ${r.difficulty ? `<li><strong>Vështirësia</strong> ${escapeHTML(r.difficulty)}</li>` : ""}
+            </ul>`
+          : ""
+      }
+      <p>${escapeHTML(r.description)}</p>
+    </div>
+  </article>
+`;
+
+const loadRecipes = async function () {
+  try {
+    const response = await fetch(`${API_URL}/api/recipes`);
+    if (!response.ok) throw new Error("Failed to load recipes");
+
+    const list = await response.json();
+
+    if (list.length === 0) {
+      recipeContainer.innerHTML = "";
+      recipeFeatured.innerHTML = `<p class="reviews-status">Recetat e reja do të shtohen së shpejti.</p>`;
+      return;
+    }
+
+    recipeContainer.innerHTML = list.map(createRecipeThumb).join("");
+    recipeFeatured.innerHTML = list.map(createRecipeDetails).join("");
+  } catch (error) {
+    // Keep the recipes already on the page
+    console.error("Error loading recipes:", error);
+  }
+};
 
 //REVEAL SECTIONS ON SCROLL
 const revealSection = function (entries, observer) {
@@ -384,5 +443,6 @@ bookingForm.addEventListener("submit", async function (e) {
   }
 });
 
-// Load database reviews when page opens
+// Load database reviews and recipes when page opens
 loadReviews();
+loadRecipes();

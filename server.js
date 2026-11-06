@@ -12,6 +12,8 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(cors());
+// Recipe uploads carry a photo, so they get a bigger limit than everything else
+app.use("/api/admin/recipes", express.json({ limit: "4mb" }));
 app.use(express.json({ limit: "10kb" }));
 
 // Aiven MySQL Database Connection
@@ -29,20 +31,75 @@ const db = mysql.createPool({
 // Create tables from schema.sql
 const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
 
-schema
-  .replace(/--.*$/gm, "")
-  .split(";")
-  .map((statement) => statement.trim())
-  .filter(Boolean)
-  .forEach((statement) => {
-    db.query(statement, (err) => {
-      if (err) {
-        console.error("ERROR CREATING TABLE:", err);
-      } else {
-        console.log("Table ready:", statement.match(/EXISTS\s+(\w+)/i)?.[1]);
-      }
-    });
-  });
+// The recipes that were on the website before the admin page could manage them
+const STARTER_RECIPES = [
+  [
+    "Risotto me Kërpudha Porcini & Vaj Trufeje",
+    "Risotto Porcini",
+    "Pjata Kryesore",
+    "35 min",
+    "Mesatare",
+    "Krem i ngrohtë orizi Carnaroli i gatuar me lëng shtëpiak perimesh, kërpudha malore të freskëta, gjalpë zviceran dhe vaj trufeje të zezë.",
+    "realrizoto.jpg",
+  ],
+  [
+    "Salmon i Pjekur me Pesto Agrumesh",
+    "Salmon Agrumesh",
+    "Deti",
+    "25 min",
+    "E lehtë",
+    "Fileto e mekur salmoni me lëkurë krokante, e shoqëruar me puree bizelesh me nenexhik dhe salcë delikate limoni e portokalli të egër.",
+    "fileto.jpg",
+  ],
+  [
+    "Fileto Viçi e Maturuar Sous-Vide",
+    "Fileto Sous-Vide",
+    "Chef's Special",
+    "45 min",
+    "E lartë",
+    "Mish i përzgjedhur viçi i gatuar me teknikën sous-vide për 2 orë, i shërbyer me patate me gjalpë dhe reduktim vere të kuqe me sherebelë.",
+    "mish.jpg",
+  ],
+  [
+    "Tiramisu me Krem Pistaqio Siçilian",
+    "Tiramisu Pistaqio",
+    "Ëmbëlsirë",
+    "20 min",
+    "E lehtë",
+    "Varianti modern i desertit klasik italian me krem mascarpone të rrahur dhe pistakë të bluar nga Siçilia.",
+    "tiramisu.jpg",
+  ],
+];
+
+const setupDatabase = async () => {
+  const statements = schema
+    .replace(/--.*$/gm, "")
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+
+  for (const statement of statements) {
+    await db.promise().query(statement);
+    console.log("Table ready:", statement.match(/EXISTS\s+(\w+)/i)?.[1]);
+  }
+
+  // Fill the recipes table the first time only
+  const [[{ count }]] = await db
+    .promise()
+    .query("SELECT COUNT(*) AS count FROM recipes");
+
+  if (count === 0) {
+    await db
+      .promise()
+      .query(
+        "INSERT INTO recipes (title, short_title, category, prep_time, difficulty, description, image_url) VALUES ?",
+        [STARTER_RECIPES],
+      );
+    console.log("Starter recipes added");
+  }
+};
+
+setupDatabase().catch((err) => console.error("ERROR SETTING UP DATABASE:", err));
 
 // SIMPLE SPAM PROTECTION
 // Max 5 submissions per visitor every 15 minutes
@@ -167,6 +224,43 @@ app.post("/api/bookings", rateLimit, (req, res) => {
   });
 });
 
+// GET RECIPES (without the photo bytes – those come from /image)
+app.get("/api/recipes", (req, res) => {
+  db.query(
+    `SELECT id, title, short_title, category, prep_time, difficulty, description, image_url
+     FROM recipes ORDER BY id ASC`,
+    (err, results) => {
+      if (err) {
+        console.error("GET RECIPES ERROR:", err);
+        return res.status(500).json({ error: "Could not load recipes" });
+      }
+
+      res.json(results);
+    },
+  );
+});
+
+// GET RECIPE PHOTO (uploaded from the admin page)
+app.get("/api/recipes/:id/image", (req, res) => {
+  db.query(
+    "SELECT image, image_type FROM recipes WHERE id = ?",
+    [Number(req.params.id)],
+    (err, results) => {
+      if (err) {
+        console.error("GET RECIPE IMAGE ERROR:", err);
+        return res.status(500).end();
+      }
+
+      const recipe = results[0];
+      if (!recipe?.image) return res.status(404).end();
+
+      // A recipe's photo never changes, so browsers can keep it
+      res.set("Cache-Control", "public, max-age=31536000, immutable");
+      res.type(recipe.image_type).send(recipe.image);
+    },
+  );
+});
+
 // ==========================================================================
 // ADMIN (password is set as ADMIN_PASSWORD in Render's environment variables)
 // ==========================================================================
@@ -248,6 +342,60 @@ app.delete("/api/admin/bookings/:id", requireAdmin, (req, res) => {
     "DELETE FROM bookings WHERE id = ?",
     [Number(req.params.id)],
     sendQuery(res, "DELETE BOOKING"),
+  );
+});
+
+// ADD RECIPE
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+
+app.post("/api/admin/recipes", requireAdmin, (req, res) => {
+  const title = cleanText(req.body.title, 160);
+  const shortTitle = cleanText(req.body.short_title, 60) || title.slice(0, 60);
+  const category = cleanText(req.body.category, 60);
+  const prepTime = cleanText(req.body.prep_time, 40);
+  const difficulty = cleanText(req.body.difficulty, 40);
+  const description = cleanText(req.body.description, 2000);
+
+  // Photo arrives as "data:image/jpeg;base64,...."
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(
+    req.body.image || "",
+  );
+  const image = match && Buffer.from(match[2], "base64");
+
+  if (!title || !description || !image) {
+    return res.status(400).json({
+      error: "Title, description and photo are required",
+    });
+  }
+
+  if (image.length > MAX_IMAGE_BYTES) {
+    return res.status(413).json({ error: "Photo is too large" });
+  }
+
+  const sql = `INSERT INTO recipes
+    (title, short_title, category, prep_time, difficulty, description, image, image_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  db.query(
+    sql,
+    [title, shortTitle, category, prepTime, difficulty, description, image, match[1]],
+    (err, result) => {
+      if (err) {
+        console.error("ADD RECIPE ERROR:", err);
+        return res.status(500).json({ error: "Could not save recipe" });
+      }
+
+      res.status(201).json({ message: "OK", id: result.insertId });
+    },
+  );
+});
+
+// DELETE RECIPE
+app.delete("/api/admin/recipes/:id", requireAdmin, (req, res) => {
+  db.query(
+    "DELETE FROM recipes WHERE id = ?",
+    [Number(req.params.id)],
+    sendQuery(res, "DELETE RECIPE"),
   );
 });
 
